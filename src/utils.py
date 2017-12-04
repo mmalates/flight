@@ -10,6 +10,7 @@ class Predictor(object):
     def __init__(self, data_file,):
         """Reads in data and initializes some attributes for later"""
         self.data = pd.read_csv(data_file)
+        self.target = None
         self.model_dict = {'Linear': lm.LinearRegression(),
                            'Lasso': lm.Lasso(),
                            'Ridge': lm.Ridge,
@@ -21,6 +22,7 @@ class Predictor(object):
         self.model = None
 
     def processing(self):
+        self.data.dropna(inplace=True)
         pass
 
     def train(self, model_name, target, **model_params):
@@ -39,13 +41,16 @@ class Predictor(object):
         Returns:
             trained model
         """
-        if model_name == 'Linear':
-            for col in self.data.drop.columns:
-                if pd.api.types.is_numeric_dtype(self.data.col) & col != target:
-                    self.features.append(col)
+        features = ['WEATHER_DELAY', 'DAY_OF_WEEK']
+        # if model_name == 'Linear':
+        #     for col in self.data.columns:
+        #         if (pd.api.types.is_numeric_dtype(self.data[col])) & (col != target):
+        #             self.features.append(col)
+        self.target = self.data[target].fillna(self.data[target].median())
+        self.data = self.data[features].fillna(self.data[features].median())
         model = self.model_dict[model_name]
         model.set_params(**model_params)
-        self.model = model.fit(self.data[self.features], self.data[target])
+        self.model = model.fit(self.data, self.target)
 
     def predict(self, data_to_predict):
         return self.model.predict(data_to_predict)
