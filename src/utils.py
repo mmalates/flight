@@ -40,10 +40,6 @@ class Predictor(object):
         else:
             print 'Please select a csv or json file'
 
-    def processing(self):
-        self.data.dropna(inplace=True)
-        pass
-
     def fit(self, model_name, features=self.selected_features_, target, **model_params):
         """Train model on training data
 
