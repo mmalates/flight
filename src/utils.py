@@ -40,7 +40,7 @@ class Predictor(object):
         else:
             print 'Please select a csv or json file'
 
-    def fit(self, model_name, features=self.selected_features_, target, **model_params):
+    def fit(self, model_name, target, features, **model_params):
         """Train model on training data
 
         Args:
@@ -52,7 +52,10 @@ class Predictor(object):
                                 'AdaBoost': en.AdaBoostRegressor(),
                                 'GradientBoost': en.GradientBoostingRegressor(),
                                 'Bagging': en.BaggingRegressor()}
-            **model_params: Parameters to be passed to model
+            target (str): column name of target
+            features (list): list of column names to use in fit
+            **model_params (dict): Parameters to be passed to model
+
         Returns:
             trained model
         """
@@ -63,14 +66,19 @@ class Predictor(object):
         self.model = model.fit(self.data, self.target)
 
     def set_features(self, features):
+        """Set features to build model with
+
+        Args:
+            features (list): list of feature column names
+        """
         self.features_ = features
 
     def select_features(self):
         """trains a Lasso regression and drops features with 0 coefficients"""
         model = lm.LassoCV(normalize=True)
-        model.fit(self.data[self.features], self.target)
+        model.fit(self.data[self.features_], self.target)
         with open('lasso_coefficients.txt', 'w') as f:
-            for coef, feature in sorted(zip(trained_model.coef_, self.train_features_$
+            for coef, feature in sorted(zip(trained_model.coef_, self.features_)):
                 f.write('{} : {}\n'.format(feature, coef))
                 if coef not in [-0.0, 0.0]:
                     self.selected_features_.append(feature)
@@ -85,8 +93,8 @@ class Predictor(object):
             dummy_columns (list): columns to create dummy columns from
         """
         for column in dummy_columns:
-            dummies=pd.get_dummies(self.data[column], prefix=column)
-            self.data=pd.concat((self.data, dummies), axis=1)
+            dummies = pd.get_dummies(self.data[column], prefix=column)
+            self.data = pd.concat((self.data, dummies), axis=1)
             self.data.drop(column, axis=1, inplace=True)
 
 
