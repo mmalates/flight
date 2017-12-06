@@ -25,6 +25,7 @@ class Predictor(object):
         self.features_ = []
         self.selected_features_ = []
         self.model = None
+        self.cv_score_ = {}
 
     def load_data(self, filepath, sep=","):
         """loads csv or json data from file
@@ -65,6 +66,41 @@ class Predictor(object):
         model.set_params(**model_params)
         self.model = model.fit(self.data, self.target)
 
+    def fitCV(self, model_name, target, features, **model_params):
+        """cross-validate model on training data and store score in self.cv_score_
+
+        Note:
+            Data must be preprocessed
+
+        Args:
+            model_name (str): options are
+                                {'Linear': lm.LinearRegression(),
+                                'Lasso': lm.Lasso(),
+                                'Ridge': lm.Ridge,
+                                'RandomRorest': en.RandomForestRegressor(),
+                                'AdaBoost': en.AdaBoostRegressor(),
+                                'GradientBoost': en.GradientBoostingRegressor(),
+                                'Bagging': en.BaggingRegressor()}
+            target (str): column name of target
+            features (list): list of column names to use in fit
+            **model_params (dict): Parameters to be passed to model
+        """
+        model = self.model_dict[model_name]
+        model.set_params(**model_params)
+        errors = []
+        X = self.data[features]
+        y = self.data[target]
+        kf = ms.KFold(n_splits=3, shuffle=True)
+        error = []
+        for train_index, test_index in kf.split(y):
+            print 'new fold'
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+            error.append(np.sqrt(skm.mean_squared_error(y_test, predictions)))
+        self.cv_score_[model_name] = np.mean(error)
+
     def set_features(self, features):
         """Set features to build model with
 
@@ -78,7 +114,7 @@ class Predictor(object):
         model = lm.LassoCV(normalize=True)
         model.fit(self.data[self.features_], self.target)
         with open('lasso_coefficients.txt', 'w') as f:
-            for coef, feature in sorted(zip(trained_model.coef_, self.features_)):
+            for coef, feature in sorted(zip(model.coef_, self.features_)):
                 f.write('{} : {}\n'.format(feature, coef))
                 if coef not in [-0.0, 0.0]:
                     self.selected_features_.append(feature)
